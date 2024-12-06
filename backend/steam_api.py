@@ -11,7 +11,22 @@ def get_owned_games(steam_id):
         "format": "json"
     }
     response = requests.get(url, params=params)
+    response.raise_for_status()
     return response.json()
+
+def resolve_vanity_url(vanity_url):
+    url = "https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/"
+    params = {
+        "key": Config.STEAM_API_KEY,
+        "vanityurl": vanity_url,
+    }
+    response = requests.get(url, params=params)
+    response.raise_for_status()
+    data = response.json()
+    if data['response']['success'] == 1:
+        return data['response']['steamid']
+    else:
+        raise ValueError(f"Could not resolve SteamID for vanity URL: {vanity_url}")
 
 def get_inventory(steam_id, app_id):
     url = f"https://steamcommunity.com/id/{steam_id}/inventory#{app_id}"
