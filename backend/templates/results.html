@@ -1,15 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Results</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steam Value Lookup Results</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <h1>Results for {{ user_data['response']['steamid'] }}</h1>
-    <h2>Games</h2>
-    <ul>
-        {% for game in user_data['response']['games'] %}
-            <li>{{ game['name'] }} - {{ game['playtime_forever'] }} minutes</li>
-        {% endfor %}
-    </ul>
+    <header>
+        <h1>🎮 Steam Value Lookup</h1>
+        <p>Here are your Steam games sorted by playtime (highest to lowest)</p>
+    </header>
+
+    <main>
+        <section class="results-container">
+            {% if user_data %}
+                <div class="user-info">
+                    <h2>User: {{ user_data['response']['steamid'] }}</h2>
+                </div>
+                <div class="games-list">
+                    <h3>Owned Games</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Game</th>
+                                <th>Playtime (Hours)</th>
+                                <th>Value (USD)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for game in user_data['response']['games'] %}
+                                <tr>
+                                    <td>{{ game['name'] }}</td>
+                                    <td>{{ (game['playtime_forever'] / 60) | round(2) }}</td>
+                                    <td>${{ game.get('value', 'N/A') }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>                        
+                    </table>
+                </div>
+            {% else %}
+                <div class="error-message">
+                    <p>No data found for the provided Steam ID.</p>
+                </div>
+            {% endif %}
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; <span id="current-year"></span> Steam Value Lookup. Powered by <a href="https://store.steampowered.com" target="_blank">Steam API</a>.</p>
+    </footer>
+    <script src="../static/script.js"></script>
 </body>
 </html>
