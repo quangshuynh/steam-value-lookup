@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Results</title>
+</head>
+<body>
+    <h1>Results for {{ user_data['response']['steamid'] }}</h1>
+    <h2>Games</h2>
+    <ul>
+        {% for game in user_data['response']['games'] %}
+            <li>{{ game['name'] }} - {{ game['playtime_forever'] }} minutes</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
