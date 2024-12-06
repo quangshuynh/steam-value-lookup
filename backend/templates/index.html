@@ -1,15 +1,30 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Steam Value Lookup</title>
     <link rel="stylesheet" href="../static/style.css">
 </head>
 <body>
-    <h1>Steam Value Lookup</h1>
-    <form action="/lookup" method="post">
-        <label for="steam_id">Enter SteamID:</label>
-        <input type="text" id="steam_id" name="steam_id" required>
-        <button type="submit">Search</button>
-    </form>
+    <header>
+        <h1>🎮 Steam Value Lookup</h1>
+        <p>Discover the worth of your Steam games and inventory in just a few clicks!</p>
+    </header>
+
+    <main>
+        <section class="search-container">
+            <form action="/lookup" method="post">
+                <label for="steam_id">Enter Steam ID or Vanity URL:</label>
+                <input type="text" id="steam_id" name="steam_id" placeholder="e.g., 76561198857672717" required>
+                <button type="submit">Search</button>
+            </form>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; <span id="current-year"></span> Steam Value Lookup. Powered by <a href="https://store.steampowered.com" target="_blank">Steam API</a>.</p>
+    </footer>
+    <script src="../static/script.js"></script>
 </body>
 </html>
