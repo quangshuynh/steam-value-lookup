@@ -2,12 +2,18 @@ import requests
 from config import Config
 
 def get_owned_games(steam_id):
-    url = "https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/"
+    url = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/"
     params = {
         "key": Config.STEAM_API_KEY,   # steam api key
         "steamid": steam_id,
         "include_appinfo": True,
         "include_played_free_games": True,
+        "format": "json"
     }
     response = requests.get(url, params=params)
+    return response.json()
+
+def get_inventory(steam_id, app_id):
+    url = f"https://steamcommunity.com/id/{steam_id}/inventory#{app_id}"
+    response = requests.get(url)
     return response.json()
