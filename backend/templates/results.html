@@ -29,6 +29,7 @@
                     <table>
                         <thead>
                             <tr>
+                                <th>Thumbnail</th>
                                 <th>Game</th>
                                 <th>Playtime (Hours)</th>
                                 <th>Value (USD)</th>
@@ -37,6 +38,11 @@
                         <tbody>
                             {% for game in user_data['response']['games'] %}
                                 <tr>
+                                    <td>
+                                        <a href="https://store.steampowered.com/app/{{game['appid']}}">
+                                            <img src="https://steamcdn-a.akamaihd.net/steam/apps/{{ game['appid'] }}/capsule_184x69.jpg" alt="{{game['name']}}" class="game-thumbnail">
+                                        </a>
+                                    </td>
                                     <td>{{ game['name'] }}</td>
                                     <td>{{ (game['playtime_forever'] / 60) | round(2) }}</td>
                                     <td>${{ game.get('value', 'N/A') }}</td>
