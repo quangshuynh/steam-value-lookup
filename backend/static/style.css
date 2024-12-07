@@ -172,6 +172,14 @@ table td:first-child {
     font-weight: bold;
 }
 
+/* sorting message */
+#header-message {
+    margin-top: -3.5rem;
+}
+#sorting-message {
+    margin-top: -0.5rem; 
+}
+
 /* Sort Buttons */
 .sort-buttons {
     display: flex;
@@ -235,4 +243,26 @@ table tr:hover {
     color: #e57373;
     font-size: 1.2rem;
     margin: 2rem 0;
+}
+
+/* Back button */
+.back-button-container {
+    margin: 0.5rem 0;
+    text-align: left;
+}
+
+.back-button {
+    display: inline-block;
+    padding: 0.7rem 1.5rem;
+    background: #4a90e2;
+    color: #e9e7e7;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.back-button:hover {
+    background: #357ab8;
+    transform: translateX(-5px);
 }
