@@ -9,28 +9,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // sorting table
 function sortTable(order) {
-    const table = document.getElementById("games-table");
-    const tbody = table.getElementsByTagName("tbody")[0];
-    const rows = Array.from(tbody.getElementsByTagName("tr"));
+    const table = document.querySelector('.games-list table tbody');
+    const rows = Array.from(table.querySelectorAll('tr'));
 
     rows.sort((a, b) => {
-        const gameA = a.getElementsByTagName("td")[1].innerText.toLowerCase();
-        const gameB = b.getElementsByTagName("td")[1].innerText.toLowerCase();
-        const hoursA = parseFloat(a.getElementsByTagName("td")[2].innerText);
-        const hoursB = parseFloat(b.getElementsByTagName("td")[2].innerText);
+        const nameA = a.cells[1].textContent.trim().toLowerCase();
+        const nameB = b.cells[1].textContent.trim().toLowerCase();
+        const hoursA = parseFloat(a.cells[2].textContent.trim());
+        const hoursB = parseFloat(b.cells[2].textContent.trim());
 
-        switch (order) {
-            case 'hours-desc':
-                return hoursB - hoursA;
-            case 'hours-asc':
-                return hoursA - hoursB;
-            case 'alpha-desc':
-                return gameB.localeCompare(gameA);
-            case 'alpha-asc':
-                return gameA.localeCompare(gameB);
+        if(order === 'hours-desc') {
+            return hoursB - hoursA;
+        } else if(order === 'hours-asc') {
+            return hoursA - hoursB;
+        } else if(order === 'alpha-desc') {
+            return nameB.localeCompare(nameA);
+        } else if(order === 'alpha-asc') {
+            return nameA.localeCompare(nameB);
         }
     });
 
-    // re-append rows in sorted order
-    rows.forEach(row => tbody.appendChild(row));
+    // re-append sorted rows
+    rows.forEach(row => table.appendChild(row));
 }
+
