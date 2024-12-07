@@ -18,6 +18,12 @@
                 <div class="user-info">
                     <h2>User: {{ user_data['response']['steamid'] }}</h2>
                 </div>
+                <div class="sort-buttons">
+                    <button onnclick="sortTable('hours-desc')">Hours Descending</button>
+                    <button onnclick="sortTable('hours-asc')">Hours Ascending</button>
+                    <button onnclick="sortTable('alpha-desc')">Alphabetically Descending</button>
+                    <button onnclick="sortTable('alpha-asc')">Alphabetically Ascending</button>
+                </div>
                 <div class="games-list">
                     <h3>Owned Games</h3>
                     <table>
