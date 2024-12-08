@@ -19,10 +19,12 @@
         <section class="results-container">
             {% if user_data %}
                 <div class="user-info">
-                    <a href="{{ user_data['player']['profile_url'] }}" target="_blank">
+                    <img src="{{ user_data['player']['avatar_full'] }}" alt="Profile Picture" class="profile-picture">
+                    <div class="user-details">
+                        <a href="{{ user_data['player']['profile_url'] }}" target="_blank">
                             <h2>User: {{ user_data['player']['name'] }}</h2>
                         </a>
-                    <img src="{{ user_data['player']['avatar_full'] }}" alt="Profile Picture" class="profile-picture">
+                    </div>
                 </div>
                 <div class="stats-container">
                     <div class="stat">
