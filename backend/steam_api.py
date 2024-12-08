@@ -39,6 +39,28 @@ def vanity_url(vanity_url):
         return data['response']['steamid']
     else:
         raise ValueError("Could not resolve vanity URL. Please provide a valid SteamID or vanity name.")
+    
+def get_player_achievements(steam_id, app_id):
+    url = "http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/"
+    params = {
+        "key": Config.STEAM_API_KEY,
+        "steamid": steam_id,
+        "appid": app_id
+    }
+    response = requests.get(url, params=params)
+    response.raise_for_status()
+    return response.json
+
+def get_user_game_stats(steam_id, app_id):
+    url = " http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/"
+    params = {
+        "key": Config.STEAM_API_KEY,
+        "steamid": steam_id,
+        "appid": app_id
+    }
+    response=requests.get(url, params)
+    response.raise_for_status()
+    return response.json
 
 
 def get_inventory(steam_id, app_id):
