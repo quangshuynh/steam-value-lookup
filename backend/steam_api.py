@@ -1,5 +1,6 @@
 import requests
 from config import Config
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 
@@ -67,23 +68,37 @@ def get_user_game_stats(steam_id, app_id):
     response=requests.get(url, params)
     response.raise_for_status()
     return response.json()
+    
 
-def get_game_value(app_id):
+def get_game_value_parallel(app_ids):
     url = "https://store.steampowered.com/api/appdetails"
-    params = {
-        "appids": app_id
-    }
-    response = requests.get(url, params)
-    response.raise_for_status()
-    data = response.json()
-    if data[str(app_id)]['success']:
-        game_data = data[str(app_id)]['data']
-        if 'price_overview' in game_data:
-            return game_data['price_overview']['final_formatted']
-        else:
-            return "$0.00"
-    else:
-        return "Invalid App ID"
+    results = {}
+
+    # helper function to fetch the price for a single app ID
+    def fetch_price(app_id):
+        params = {"appids": app_id}
+        try:
+            response = requests.get(url, params=params, timeout=5)
+            response.raise_for_status()
+            data = response.json()
+            if data[str(app_id)]['success']:
+                game_data = data[str(app_id)]['data']
+                if 'price_overview' in game_data:
+                    return app_id, float(game_data['price_overview']['final_formatted'].replace('$', '').replace(',', ''))
+                else:
+                    return app_id, 0.0
+            else:
+                return app_id, 0.0
+        except Exception:
+            return app_id, 0.0
+
+    # use ThreadPoolExecutor to fetch prices concurrently
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(fetch_price, app_id) for app_id in app_ids]
+        for future in as_completed(futures):
+            app_id, price = future.result()
+            results[app_id] = price
+    return results
 
 
 def get_inventory(steam_id, app_id):
