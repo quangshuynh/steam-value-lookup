@@ -25,6 +25,21 @@ def get_player_summaries(steam_id):
     response.raise_for_status()
     return response.json()
 
+def vanity_url(vanity_url):
+    url = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/"
+    params = {
+        "key": Config.STEAM_API_KEY,
+        "vanityurl": vanity_url,
+        "format": "json"
+    }
+    response = requests.get(url, params=params)
+    response.raise_for_status()
+    data = response.json()
+    if data['response']['success'] == 1:
+        return data['response']['steamid']
+    else:
+        raise ValueError("Could not resolve vanity URL. Please provide a valid SteamID or vanity name.")
+
 
 def get_inventory(steam_id, app_id):
     url = f"https://steamcommunity.com/id/{steam_id}/inventory#{app_id}"
