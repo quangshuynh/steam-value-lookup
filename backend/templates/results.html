@@ -21,6 +21,24 @@
                 <div class="user-info">
                     <h2>User: {{ user_data['response']['steamid'] }}</h2>
                 </div>
+                <div class="stats-container">
+                    <div class="stat">
+                        <h3>Total Games Owned:</h3>
+                        <p id="total-games">{{ user_data['statistics']['total_games'] }}</p>
+                    </div>
+                    <div class="stat">
+                        <h3>Total Playtime (Hours):</h3>
+                        <p id="total-hours">{{ user_data['statistics']['total_playtime_hours'] }}</p>
+                    </div>
+                    <div class="stat">
+                        <h3>Average Playtime (Hours):</h3>
+                        <p id="average-hours">{{ user_data['statistics']['average_playtime_hours'] }}</p>
+                    </div>
+                    <div class="stat">
+                        <h3>Total Value (USD):</h3>
+                        <p id="total-value">${{ user_data['statistics']['total_value'] }}</p>
+                    </div>
+                </div>
                 <div class="sort-buttons">
                     <button onclick="sortTable('hours-desc')">Hours Descending</button>
                     <button onclick="sortTable('hours-asc')">Hours Ascending</button>

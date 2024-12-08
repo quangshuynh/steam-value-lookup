@@ -37,4 +37,3 @@ function sortTable(order) {
     // re-append sorted rows
     rows.forEach(row => table.appendChild(row));
 }
-
