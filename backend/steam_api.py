@@ -18,7 +18,7 @@ def get_player_summaries(steam_id):
     url = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/"
     params = {
         "key": Config.STEAM_API_KEY,
-        "steamid": steam_id,
+        "steamids": steam_id,
         "format": "json",
     }
     response = requests.get(url, params=params)

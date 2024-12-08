@@ -1,8 +1,8 @@
 from flask import Flask, render_template, request
 from config import Config
 from database import init_db, db
-from steam_api import get_owned_games, get_inventory
-from models import User, Game, InventoryItem
+from steam_api import get_owned_games, get_player_summaries#, get_inventory
+# from models import User, Game, InventoryItem
 import requests
 
 app = Flask(__name__)
@@ -21,6 +21,19 @@ def lookup():
 
     try:
         user_data = get_owned_games(steam_id)
+
+        # player info
+        player_data = get_player_summaries(steam_id)
+        if 'players' in player_data['response'] and player_data['response']['players']:
+            player = player_data['response']['players'][0]
+            user_data['player'] = {
+                'steamid': player.get('steamid'),
+                'name': player.get('personaname'),
+                'profile_url': player.get('profileurl'),
+                'avatar': player.get('avatar'),
+                'avatar_medium': player.get('avatarmedium'),
+                'avatar_full': player.get('avatarfull')
+            }
 
         # sort games by playtime in descending order
         if 'games' in user_data['response']:

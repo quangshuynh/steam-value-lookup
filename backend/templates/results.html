@@ -19,7 +19,8 @@
         <section class="results-container">
             {% if user_data %}
                 <div class="user-info">
-                    <h2>User: {{ user_data['response']['steamid'] }}</h2>
+                    <h2>User: {{ user_data['player']['name'] }}</h2>
+                    <img src="{{ user_data['player']['avatar_full'] }}" alt="Profile Picture" class="profile-picture">
                 </div>
                 <div class="stats-container">
                     <div class="stat">
