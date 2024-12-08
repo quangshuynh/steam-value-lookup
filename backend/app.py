@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 from config import Config
 from database import init_db, db
-from steam_api import get_owned_games, get_player_summaries, vanity_url#, get_inventory
+from steam_api import get_owned_games, get_player_summaries, vanity_url, get_player_achievements, get_user_game_stats
 # from models import User, Game, InventoryItem
 import requests
 
@@ -44,6 +44,19 @@ def lookup():
         # sort games by playtime in descending order
         if 'games' in user_data['response']:
             games = user_data['response']['games']
+
+            # game achievements and stats
+            for game in games:
+                app_id = game['appid']
+                try:
+                    achievements = get_player_achievements(steam_id, app_id)
+                    stats = get_user_game_stats(steam_id, app_id)
+                    game['achievements'] = achievements.get('playerstats', {}).get('achievements', [])
+                    game['stats'] = stats.get('playerstats', {}).get('stats', [])
+                except requests.exceptions.HTTPError:
+                    game['achievements'] = []
+                    game['stats'] = []
+
 
             # sort games by playtime in descending order
             sorted_games = sorted(games, key=lambda game: game.get('playtime_forever', 0), reverse=True)
