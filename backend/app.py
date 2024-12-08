@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 from config import Config
 from database import init_db, db
-from steam_api import get_owned_games, get_player_summaries, vanity_url, get_player_achievements, get_user_game_stats
+from steam_api import get_owned_games, get_player_summaries, vanity_url, get_game_value
 # from models import User, Game, InventoryItem
 import requests
 
@@ -45,30 +45,33 @@ def lookup():
         if 'games' in user_data['response']:
             games = user_data['response']['games']
 
-            # game achievements and stats
-            for game in games:
-                app_id = game['appid']
+            # helper functino to remove dollar sign and commas, then convert to float
+            def price_to_float(price_str):
                 try:
-                    achievements = get_player_achievements(steam_id, app_id)
-                    stats = get_user_game_stats(steam_id, app_id)
-                    game['achievements'] = achievements.get('playerstats', {}).get('achievements', [])
-                    game['stats'] = stats.get('playerstats', {}).get('stats', [])
-                except requests.exceptions.HTTPError:
-                    game['achievements'] = []
-                    game['stats'] = []
+                    return float(price_str.replace('$', '').replace(',', ''))
+                except (ValueError, AttributeError):
+                    return 0.0
 
+            # game value prices
+            total = 0.0
+            for game in games:
+                game['value'] = get_game_value(game['appid'])  
+                float_value = price_to_float(game['value'])
+                total += float_value
+                game['value'] = float_value  
 
             # sort games by playtime in descending order
             sorted_games = sorted(games, key=lambda game: game.get('playtime_forever', 0), reverse=True)
-            
-            # calculate statistics
+
+            # calculate stats
             total_games = len(games)
             total_playtime_minutes = sum(game.get('playtime_forever', 0) for game in games)
             total_playtime_hours = round(total_playtime_minutes / 60, 2)
             average_playtime_hours = round(total_playtime_hours / total_games, 2) if total_games > 0 else 0
 
-            # dummy value for game prices (replace with real data if available)
-            total_value = round(sum(game.get('value', 0) for game in games), 2)
+            # total value
+            total_value = round(total, 2)
+
 
             # add calculated statistics to user_data
             user_data['statistics'] = {
