@@ -45,11 +45,8 @@ def lookup():
                 'average_playtime_hours': average_playtime_hours,
                 'total_value': total_value
             }
-
             user_data['response']['games'] = sorted_games
-
         return render_template('results.html', user_data=user_data)
-
     except ValueError as e:
         return render_template('index.html', error=str(e))
     except requests.exceptions.HTTPError as e:
