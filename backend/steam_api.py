@@ -79,11 +79,12 @@ def get_game_value_parallel(app_ids):
         params = {
             "appids": app_id,
             "cc": "us"
-            }
+        }
         try:
             response = requests.get(url, params=params, timeout=5)
             response.raise_for_status()
             data = response.json()
+            print(data)
             if data[str(app_id)]['success']:
                 game_data = data[str(app_id)]['data']
                 if 'price_overview' in game_data:
