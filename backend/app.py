@@ -2,7 +2,6 @@ from flask import Flask, render_template, request
 from config import Config
 from database import init_db, db
 from steam_api import get_owned_games, get_player_summaries, vanity_url, get_game_value_parallel
-# from models import User, Game, InventoryItem
 import requests
 
 app = Flask(__name__)
