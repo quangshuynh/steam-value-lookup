@@ -1,6 +1,5 @@
 import logging
 import re
-import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
@@ -9,14 +8,14 @@ from config import Config
 
 
 logger = logging.getLogger(__name__)
-INVENTORY_CONTEXTS = {
-    440: 2,      # Team Fortress 2
-    570: 2,      # Dota 2
-    730: 2,      # Counter-Strike 2
-    252490: 2,   # Rust
+STEAMWEBAPI_GAMES = {
+    440: "tf2",
+    570: "dota",
+    730: "cs2",
+    252490: "rust",
+    578080: "pubg",
+    590830: "sbox",
 }
-MAX_MARKET_ITEMS_PER_GAME = 40
-MARKET_PRICE_CACHE = {}
 GAME_PRICE_CACHE = {}
 STEAM_HEADERS = {
     "Accept": "application/json",
@@ -170,141 +169,84 @@ def get_game_value_parallel(app_ids):
     return results
 
 
-def _parse_usd_price(value):
-    if not value:
-        return None
-    numeric_value = re.sub(r"[^0-9.]", "", value)
-    try:
-        return float(numeric_value)
-    except ValueError:
-        return None
-
-
-def _get_market_price(app_id, market_hash_name):
-    cache_key = (app_id, market_hash_name)
-    if cache_key in MARKET_PRICE_CACHE:
-        return MARKET_PRICE_CACHE[cache_key]
-
-    try:
-        response = requests.get(
-            "https://steamcommunity.com/market/priceoverview/",
-            params={
-                "appid": app_id,
-                "currency": 1,
-                "market_hash_name": market_hash_name,
-            },
-            headers={**STEAM_HEADERS, "Referer": "https://steamcommunity.com/market/"},
-            timeout=10,
-        )
-        response.raise_for_status()
-        data = response.json()
-        price = _parse_usd_price(data.get("lowest_price") or data.get("median_price"))
-        if price is not None:
-            MARKET_PRICE_CACHE[cache_key] = price
-        return price
-    except (requests.RequestException, AttributeError, TypeError, ValueError):
-        return None
-
-
-def get_inventory(steam_id, app_id, context_id=2):
-    url = f"https://steamcommunity.com/inventory/{steam_id}/{app_id}/{context_id}"
-    assets = []
-    descriptions = {}
-    start_asset_id = None
-
-    while True:
-        params = {"l": "english", "count": 2000}
-        if start_asset_id:
-            params["start_assetid"] = start_asset_id
-
-        response = requests.get(
-            url,
-            params=params,
-            headers={**STEAM_HEADERS, "Referer": "https://steamcommunity.com/inventory/"},
-            timeout=15,
-        )
-        response.raise_for_status()
-        data = response.json()
-        if not data.get("success"):
-            return None
-
-        assets.extend(data.get("assets", []))
-        for description in data.get("descriptions", []):
-            key = (description.get("classid"), description.get("instanceid", "0"))
-            descriptions[key] = description
-
-        if not data.get("more_items"):
-            break
-        start_asset_id = data.get("last_assetid")
-        if not start_asset_id:
-            break
-
-    return {"assets": assets, "descriptions": descriptions}
-
-
 def get_inventory_values(steam_id, app_ids):
     owned_app_ids = set(app_ids)
-    summaries = {}
-
-    for app_id, context_id in INVENTORY_CONTEXTS.items():
-        if app_id not in owned_app_ids:
-            continue
-
-        try:
-            inventory = get_inventory(steam_id, app_id, context_id)
-        except (requests.RequestException, AttributeError, TypeError, ValueError) as error:
-            logger.info("Inventory unavailable for app %s: %s", app_id, error)
-            summaries[app_id] = {
-                "status": "private_or_unavailable",
-                "value": None,
-                "partial": False,
-            }
-            continue
-
-        if inventory is None:
-            summaries[app_id] = {
-                "status": "private_or_unavailable",
-                "value": None,
-                "partial": False,
-            }
-            continue
-
-        market_items = {}
-        marketable_item_count = 0
-        for asset in inventory["assets"]:
-            key = (asset.get("classid"), asset.get("instanceid", "0"))
-            description = inventory["descriptions"].get(key, {})
-            if description.get("marketable") != 1 or not description.get("market_hash_name"):
-                continue
-
-            quantity = int(asset.get("amount", 1))
-            marketable_item_count += quantity
-            market_hash_name = description["market_hash_name"]
-            market_items[market_hash_name] = market_items.get(market_hash_name, 0) + quantity
-
-        total_value = 0.0
-        priced_types = 0
-        items_to_price = list(market_items.items())[:MAX_MARKET_ITEMS_PER_GAME]
-        for index, (market_hash_name, quantity) in enumerate(items_to_price):
-            price = _get_market_price(app_id, market_hash_name)
-            if price is not None:
-                total_value += price * quantity
-                priced_types += 1
-            if index + 1 < len(items_to_price):
-                time.sleep(1)
-
-        summaries[app_id] = {
-            "status": "ok" if not market_items or priced_types else "prices_unavailable",
-            "item_count": sum(int(asset.get("amount", 1)) for asset in inventory["assets"]),
-            "marketable_item_count": marketable_item_count,
-            "value": (
-                round(total_value, 2)
-                if priced_types
-                else 0.0 if not market_items else None
-            ),
-            "priced_types": priced_types,
-            "total_market_types": len(market_items),
-            "partial": priced_types < len(market_items),
+    supported_games = [
+        (app_id, game)
+        for app_id, game in STEAMWEBAPI_GAMES.items()
+        if app_id in owned_app_ids
+    ]
+    if not Config.STEAMWEBAPI_KEY:
+        return {
+            app_id: {"status": "not_configured", "value": None, "partial": False}
+            for app_id, _ in supported_games
         }
 
+    def fetch_inventory(app_id, game):
+        try:
+            response = requests.get(
+                "https://www.steamwebapi.com/steam/api/inventory",
+                params={
+                    "steam_id": steam_id,
+                    "game": game,
+                    "with_prices": 1,
+                    "group": 1,
+                    "currency": "USD",
+                    "production": 1,
+                    "limit": 10000,
+                },
+                headers={"X-API-Key": Config.STEAMWEBAPI_KEY, **STEAM_HEADERS},
+                timeout=30,
+            )
+            if response.status_code == 403:
+                return app_id, {"status": "private", "value": None, "partial": False}
+            if response.status_code in (410, 411):
+                return app_id, {"status": "ok", "value": 0.0, "partial": False, "item_count": 0}
+            response.raise_for_status()
+
+            data = response.json()
+            if isinstance(data, dict):
+                items = data.get("data") or data.get("items") or data.get("inventory") or []
+            else:
+                items = data
+            if not isinstance(items, list):
+                raise ValueError("Unexpected SteamWebAPI inventory response")
+
+            total_value = 0.0
+            item_count = 0
+            unpriced_items = 0
+            for item in items:
+                quantity = int(item.get("count") or item.get("amount") or 1)
+                item_count += quantity
+                price = next(
+                    (
+                        item.get(field)
+                        for field in ("pricelatest", "pricesafe", "pricemix", "pricereal")
+                        if item.get(field) is not None
+                    ),
+                    None,
+                )
+                if isinstance(price, str):
+                    price = re.sub(r"[^0-9.]", "", price)
+                try:
+                    total_value += float(price) * quantity
+                except (TypeError, ValueError):
+                    unpriced_items += quantity
+
+            return app_id, {
+                "status": "ok" if not unpriced_items else "prices_unavailable",
+                "value": round(total_value, 2) if item_count > unpriced_items else None,
+                "partial": unpriced_items > 0,
+                "item_count": item_count,
+            }
+        except (requests.RequestException, AttributeError, TypeError, ValueError) as error:
+            logger.info("SteamWebAPI inventory unavailable for app %s: %s", app_id, error)
+            return app_id, {"status": "api_unavailable", "value": None, "partial": False}
+
+    summaries = {}
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = [executor.submit(fetch_inventory, app_id, game) for app_id, game in supported_games]
+        for future in as_completed(futures):
+            app_id, summary = future.result()
+            summaries[app_id] = summary
     return summaries

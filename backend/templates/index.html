@@ -14,16 +14,23 @@
 
     <main>
         <section class="search-container">
-            <form action="/lookup" method="post">
+            <form action="/lookup" method="post" id="lookup-form">
                 <label for="steam_id">Enter Steam ID or Vanity URL:</label>
                 <input type="text" id="steam_id" name="steam_id" placeholder="e.g., 76561198857672717" required>
-                <button type="submit">Search</button>
+                <button type="submit" id="lookup-button">Search</button>
             </form>
+        </section>
+        <section class="loading-panel" id="loading-panel" aria-live="polite" hidden>
+            <div class="loading-heading">Looking up your library</div>
+            <p id="loading-status">Connecting to Steam...</p>
+            <div class="progress-track" aria-hidden="true">
+                <div class="progress-bar"></div>
+            </div>
         </section>
     </main>
 
     <footer>
-        <p>&copy; <span id="current-year"></span> Steam Value Lookup. Powered by <a href="https://partner.steamgames.com/doc/api/ISteamUserStats" target="_blank">Steam API</a>.</p>
+        <p>&copy; <span id="current-year"></span> Steam Value Lookup by <a href="https://github.com/quangshuynh" target="_blank" rel="noopener noreferrer">Quang Huynh</a>. Powered by <a href="https://partner.steamgames.com/doc/api/ISteamUserStats" target="_blank" rel="noopener noreferrer">Steam API</a>.</p>
     </footer>
     <script src="../static/script.js"></script>
 </body>

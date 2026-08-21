@@ -4,12 +4,39 @@ document.addEventListener("DOMContentLoaded", () => {
     if (yearSpan) {
         yearSpan.textContent = new Date().getFullYear();
     }
+
+    const lookupForm = document.getElementById('lookup-form');
+    if (lookupForm) {
+        const searchContainer = document.querySelector('.search-container');
+        const loadingPanel = document.getElementById('loading-panel');
+        const loadingStatus = document.getElementById('loading-status');
+        const lookupButton = document.getElementById('lookup-button');
+        const messages = [
+            'Loading your Steam library...',
+            'Checking game prices and achievements...',
+            'Calculating supported inventory values...',
+            'Preparing your results...'
+        ];
+
+        lookupForm.addEventListener('submit', () => {
+            lookupButton.disabled = true;
+            searchContainer.hidden = true;
+            loadingPanel.hidden = false;
+
+            let messageIndex = 0;
+            window.setInterval(() => {
+                loadingStatus.textContent = messages[messageIndex % messages.length];
+                messageIndex += 1;
+            }, 3500);
+        });
+    }
 });
 
 
 // sorting table
 function sortTable(order) {
     const table = document.querySelector('.games-list table tbody');
+    if (!table) return;
     const rows = Array.from(table.querySelectorAll('tr'));
     const sortingMessage = document.getElementById('sorting-message');
 

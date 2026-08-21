@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+
 from flask import Flask, render_template, request
 from config import Config
 from database import init_db, db
@@ -53,9 +55,13 @@ def lookup():
             app_ids = [game['appid'] for game in games]
 
             # total value
-            prices = get_game_value_parallel(app_ids)
-            achievements = get_achievement_summaries(steam_id, app_ids)
-            inventories = get_inventory_values(steam_id, app_ids)
+            with ThreadPoolExecutor(max_workers=3) as executor:
+                price_future = executor.submit(get_game_value_parallel, app_ids)
+                achievement_future = executor.submit(get_achievement_summaries, steam_id, app_ids)
+                inventory_future = executor.submit(get_inventory_values, steam_id, app_ids)
+                prices = price_future.result()
+                achievements = achievement_future.result()
+                inventories = inventory_future.result()
             total = 0.0
             priced_games = 0
             for game in games:
@@ -109,6 +115,7 @@ def lookup():
                 'achievement_data_available': bool(achievement_summaries),
                 'total_inventory_value': total_inventory_value,
                 'inventory_value_is_partial': inventory_value_is_partial,
+                'inventory_api_configured': bool(Config.STEAMWEBAPI_KEY),
             }
             user_data['response']['games'] = sorted_games
         return render_template('results.html', user_data=user_data)

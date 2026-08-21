@@ -8,7 +8,8 @@ Steam Value Lookup is a small Flask web app that looks up a Steam user's library
 - Loads the user's public Steam profile and owned games.
 - Fetches current US store prices from Steam's Store API.
 - Calculates total games, total playtime, average playtime, and estimated library value.
-- Sorts games by playtime by default, with client-side sorting controls for playtime and name.
+- Loads achievement totals and supported public inventory values.
+- Sorts games by playtime, name, or store value.
 - Links profiles, game thumbnails, and games back to Steam.
 - Creates a local SQLite database through Flask-SQLAlchemy.
 
@@ -25,6 +26,7 @@ Price data is an estimate based on the current US store price. Free, unavailable
 
 - Python 3.10 or newer
 - A Steam Web API key
+- A SteamWebAPI key for inventory valuation
 - A Steam profile with game details visible to the API
 
 ## Setup
@@ -61,6 +63,7 @@ Create a `.env` file in the project root:
 
 ```env
 STEAM_API_KEY=your_steam_web_api_key
+STEAMWEBAPI_KEY=your_steamwebapi_key
 DATABASE_URL=sqlite:///steam_value_lookup.db
 ```
 

@@ -1,4 +1,8 @@
 /* General Reset */
+[hidden] {
+    display: none !important;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -91,6 +95,35 @@ main {
 
 .search-container button:hover {
     background: #357ab8;
+}
+
+.search-container button:disabled { cursor: wait; opacity: 0.7; }
+
+.loading-panel {
+    width: min(440px, 100%);
+    padding: 2rem;
+    border: 1px solid #41465c;
+    border-radius: 8px;
+    background: #24242f;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+    text-align: center;
+}
+
+.loading-panel[hidden] { display: none; }
+.loading-heading { font-size: 1.25rem; font-weight: 700; color: #e6e6ff; }
+.loading-panel p { margin: 0.65rem 0 1.2rem; color: #c7c7d8; }
+.progress-track { height: 8px; overflow: hidden; border-radius: 999px; background: #171720; }
+.progress-bar {
+    width: 40%;
+    height: 100%;
+    border-radius: inherit;
+    background: #4a90e2;
+    animation: lookup-progress 1.2s ease-in-out infinite;
+}
+
+@keyframes lookup-progress {
+    from { transform: translateX(-110%); }
+    to { transform: translateX(360%); }
 }
 
 /* Footer */
@@ -189,28 +222,33 @@ table td:first-child {
     margin-top: -0.5rem; 
 }
 
-/* Sort Buttons */
-.sort-buttons {
+/* Sort Control */
+.sort-control {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 1rem;
-    margin: 1rem 0;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin: 1.25rem 0;
 }
 
-.sort-buttons button {
-    padding: 0.7rem 1.5rem;
-    background: #4a90e2;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
+.sort-control label { color: #c7c7d8; font-weight: 600; }
+
+.sort-control select {
+    min-width: 210px;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid #4d536b;
+    border-radius: 8px;
+    background: #1f1f2e;
+    color: #f5f5f5;
     cursor: pointer;
-    transition: background 0.3s ease;
-    font-size: 1rem;
+    font: inherit;
+    outline: none;
 }
 
-.sort-buttons button:hover {
-    background: #357ab8;
+.sort-control select:hover,
+.sort-control select:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.16);
 }
 
 /* Table Styles */
@@ -389,4 +427,19 @@ table tr:hover {
     font-size: 1rem;
     color: #c7c7d8;
     margin: 0;
+}
+
+@media (max-width: 600px) {
+    main {
+        padding: 1rem;
+    }
+
+    .sort-control {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .sort-control select {
+        width: 100%;
+    }
 }
