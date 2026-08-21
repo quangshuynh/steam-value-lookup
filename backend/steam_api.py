@@ -219,8 +219,8 @@ def get_game_value_parallel(app_ids):
         return app_id, None
 
     missing_app_ids = [app_id for app_id in app_ids if app_id not in results]
-    # The Store endpoint throttles large bursts and otherwise returns many gaps.
-    with ThreadPoolExecutor(max_workers=2) as executor:
+    # Retries absorb Store throttling while a small pool keeps lookups responsive.
+    with ThreadPoolExecutor(max_workers=4) as executor:
         futures = [executor.submit(fetch_price, app_id) for app_id in missing_app_ids]
         for future in as_completed(futures):
             app_id, price = future.result()
@@ -317,7 +317,7 @@ def get_inventory_values(steam_id, app_ids):
             return app_id, {"status": "api_unavailable", "value": None, "partial": False}
 
     summaries = {}
-    with ThreadPoolExecutor(max_workers=2) as executor:
+    with ThreadPoolExecutor(max_workers=4) as executor:
         futures = [executor.submit(fetch_inventory, app_id, game) for app_id, game in supported_games]
         for future in as_completed(futures):
             app_id, summary = future.result()

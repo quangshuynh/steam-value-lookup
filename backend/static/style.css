@@ -69,6 +69,12 @@ main {
     color: #d4d4e4;
 }
 
+.search-container label a {
+    color: #4a90e2;
+    font: inherit;
+    line-height: inherit;
+}
+
 .search-container input {
     padding: 0.8rem;
     border-radius: 5px;

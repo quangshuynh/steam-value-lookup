@@ -103,7 +103,7 @@ Run the test suite from the `backend` directory so the application modules resol
 
 ```bash
 cd backend
-python -m pytest tests -v
+python -m pytest -v
 ```
 
 The tests mock external API calls, so running them does not consume Steam or SteamWebAPI quotas and does not require API keys.

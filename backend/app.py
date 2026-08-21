@@ -63,13 +63,13 @@ def lookup():
             app_ids = [game['appid'] for game in games]
 
             # total value
-            with ThreadPoolExecutor(max_workers=2) as executor:
+            with ThreadPoolExecutor(max_workers=3) as executor:
                 price_future = executor.submit(get_game_value_parallel, app_ids)
                 achievement_future = executor.submit(get_achievement_summaries, steam_id, app_ids)
+                inventory_future = executor.submit(get_inventory_values, steam_id, app_ids)
                 prices = price_future.result()
                 achievements = achievement_future.result()
-            # Finish rate-sensitive Store pricing before third-party inventory calls.
-            inventories = get_inventory_values(steam_id, app_ids)
+                inventories = inventory_future.result()
             total = 0.0
             priced_games = 0
             for game in games:
