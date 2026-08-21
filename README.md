@@ -1,5 +1,11 @@
 # Steam Value Lookup
 
+<p align="center">
+  <a href="https://github.com/quangshuynh/steam-value-lookup/actions/workflows/tests.yml"><img src="https://github.com/quangshuynh/steam-value-lookup/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
+  <img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python 3.10+">
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
+</p>
+
 Steam Value Lookup is a Flask web application that analyzes a Steam user's game library and estimates its current total store value. Enter a numeric SteamID or Steam vanity name to view profile information, owned games, playtime statistics, and per-game prices.
 
 <p align="center">
@@ -107,7 +113,7 @@ cd backend
 python -m pytest -v
 ```
 
-The tests mock external API calls, so running them does not consume Steam or SteamWebAPI quotas and does not require API keys.
+The tests cover vanity-name resolution, store pricing and achievement response handling, Flask lookup routes and aggregate calculations, empty libraries, and in-memory SQLAlchemy model initialization. External API calls are blocked or mocked, so tests do not consume Steam or SteamWebAPI quotas and do not require API keys.
 
 ## Project Structure
 
@@ -123,6 +129,9 @@ The tests mock external API calls, so running them does not consume Steam or Ste
 |   |-- templates/             # Search and results pages
 |   `-- tests/
 |       |-- __init__.py
+|       |-- conftest.py        # Network-isolation fixture
+|       |-- test_app.py        # Flask route and aggregation tests
+|       |-- test_database.py   # In-memory SQLAlchemy model tests
 |       `-- test_steam_api.py  # Steam API valuation tests
 |-- docs/
 |   `-- images/                # README screenshots
@@ -152,4 +161,4 @@ The tests mock external API calls, so running them does not consume Steam or Ste
 - Cache price lookups and add API request timeouts/retry handling for all endpoints.
 - Persist lookup results using the existing SQLAlchemy models.
 - Add currency selection and clearer handling for private profiles.
-- Expand automated coverage for empty libraries, vanity-name resolution, and route errors.
+- Expand request caching and resilience tests as the external integrations evolve.

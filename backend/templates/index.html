@@ -14,6 +14,9 @@
 
     <main>
         <section class="search-container">
+            {% if error %}
+                <p class="error-message" role="alert">{{ error }}</p>
+            {% endif %}
             <form action="/lookup" method="post" id="lookup-form">
                 <label for="steam_id">Enter <a href="https://steamid.io/" target="_blank" rel="noopener noreferrer">Steam ID</a> or Vanity URL:</label>
                 <input type="text" id="steam_id" name="steam_id" placeholder="e.g., 76561198857672717" required>

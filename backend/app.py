@@ -57,9 +57,10 @@ def lookup():
                 'avatar_full': player.get('avatarfull')
             }
 
-        # sort games by playtime in descending order by default
-        if 'games' in user_data['response']:
-            games = user_data['response']['games'] 
+        # Steam omits "games" for an empty public library. Normalize that
+        # response so the results page can still render zero-value statistics.
+        if 'response' in user_data:
+            games = user_data['response'].get('games', [])
             app_ids = [game['appid'] for game in games]
             achievement_app_ids = [
                 game['appid']

@@ -123,6 +123,66 @@ class SteamApiTests(unittest.TestCase):
         self.assertEqual(steam_api._inventory_http_status(auth_response), "auth_error")
         self.assertEqual(steam_api._inventory_http_status(quota_response), "quota_exhausted")
 
+    @patch("steam_api.requests.get")
+    def test_vanity_url_returns_resolved_steam_id(self, get):
+        response = Mock()
+        response.raise_for_status.return_value = None
+        response.json.return_value = {
+            "response": {"success": 1, "steamid": "76561198000000000"}
+        }
+        get.return_value = response
+
+        result = steam_api.vanity_url("test-player")
+
+        self.assertEqual(result, "76561198000000000")
+        self.assertEqual(get.call_args.kwargs["params"]["vanityurl"], "test-player")
+
+    @patch("steam_api.requests.get")
+    def test_vanity_url_rejects_unknown_name(self, get):
+        response = Mock()
+        response.raise_for_status.return_value = None
+        response.json.return_value = {"response": {"success": 42}}
+        get.return_value = response
+
+        with self.assertRaisesRegex(ValueError, "Could not resolve vanity URL"):
+            steam_api.vanity_url("missing-user")
+
+    @patch("steam_api.time.sleep")
+    @patch("steam_api.requests.get")
+    def test_store_price_returns_none_for_unavailable_and_malformed_data(self, get, sleep):
+        response = Mock(status_code=200, headers={})
+        response.raise_for_status.return_value = None
+        response.json.return_value = {
+            "10": {"success": False},
+            "20": {"success": True, "data": {"price_overview": {"final": "unknown"}}},
+        }
+        get.return_value = response
+
+        result = steam_api.get_game_value_parallel([10, 20])
+
+        self.assertEqual(result, {10: None, 20: None})
+
+    @patch("steam_api.get_player_achievements")
+    def test_achievement_summary_counts_unlocked_items(self, get_achievements):
+        get_achievements.return_value = {
+            "playerstats": {
+                "success": True,
+                "achievements": [{"achieved": 1}, {"achieved": 0}, {"achieved": 1}],
+            }
+        }
+
+        result = steam_api.get_achievement_summaries("76561198000000000", [10])
+
+        self.assertEqual(result[10], {"status": "ok", "unlocked": 2, "total": 3})
+
+    @patch("steam_api.get_player_achievements")
+    def test_achievement_summary_handles_unavailable_data(self, get_achievements):
+        get_achievements.return_value = {"playerstats": {"success": False}}
+
+        result = steam_api.get_achievement_summaries("76561198000000000", [10])
+
+        self.assertEqual(result[10], {"status": "unavailable"})
+
 
 if __name__ == "__main__":
     unittest.main()
