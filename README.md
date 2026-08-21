@@ -116,7 +116,3 @@ The development server runs with Flask debug mode enabled by `app.py`. For produ
 - Persist lookup results using the existing SQLAlchemy models.
 - Add currency selection and clearer handling for private profiles.
 - Add automated tests for API failures, empty libraries, vanity-name resolution, and price parsing.
-
-## License
-
-No license has been specified for this project yet.
