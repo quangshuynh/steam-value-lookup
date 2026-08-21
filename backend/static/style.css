@@ -116,13 +116,22 @@ footer a:hover {
 /* RESULTS.HTML */
 /* Results Container */
 .results-container {
-    max-width: 800px;
+    width: min(1180px, 100%);
+    max-width: 1180px;
     margin: 2rem auto;
     background: #24242f;
     padding: 2rem;
     border-radius: 10px;
     box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
     color: #f5f5f5;
+}
+
+.games-list {
+    overflow-x: auto;
+}
+
+.games-list table {
+    min-width: 900px;
 }
 
 .results-container .user-info h2 {

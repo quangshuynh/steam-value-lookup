@@ -45,6 +45,26 @@
                         <h3>Total Value (USD):</h3>
                         <p id="total-value">${{ user_data['statistics']['total_value'] }}</p>
                     </div>
+                    <div class="stat">
+                        <h3>Total Achievements:</h3>
+                        <p id="total-achievements">
+                            {% if user_data['statistics']['achievement_data_available'] %}
+                                {{ user_data['statistics']['total_achievements'] }} / {{ user_data['statistics']['total_available_achievements'] }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="stat">
+                        <h3>Inventory Value (USD):</h3>
+                        <p id="inventory-value">
+                            {% if user_data['statistics']['total_inventory_value'] is not none %}
+                                ${{ '%.2f'|format(user_data['statistics']['total_inventory_value']) }}{% if user_data['statistics']['inventory_value_is_partial'] %}*{% endif %}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </p>
+                    </div>
                 </div>
                 <div class="sort-buttons">
                     <button onclick="sortTable('hours-desc')">Hours Descending</button>
@@ -60,7 +80,9 @@
                                 <th>Thumbnail</th>
                                 <th>Game</th>
                                 <th>Playtime (Hours)</th>
+                                <th>Achievements</th>
                                 <th>Value (USD)</th>
+                                <th>Inventory (USD)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -73,7 +95,23 @@
                                     </td>
                                     <td>{{ game['name'] }}</td>
                                     <td>{{ (game['playtime_forever'] / 60) | round(2) }}</td>
+                                    <td>
+                                        {% if game.get('achievements') %}
+                                            {{ game['achievements']['unlocked'] }} / {{ game['achievements']['total'] }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
                                     <td>${{ game.get('value', 'N/A') }}</td>
+                                    <td>
+                                        {% if game.get('inventory') and game['inventory']['value'] is not none %}
+                                            ${{ '%.2f'|format(game['inventory']['value']) }}{% if game['inventory']['partial'] %}*{% endif %}
+                                        {% elif game.get('inventory_supported') %}
+                                            N/A
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
                                 </tr>
                             {% endfor %}
                         </tbody>                        

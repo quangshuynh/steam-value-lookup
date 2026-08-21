@@ -1,7 +1,14 @@
 from flask import Flask, render_template, request
 from config import Config
 from database import init_db, db
-from steam_api import get_owned_games, get_player_summaries, vanity_url, get_game_value_parallel
+from steam_api import (
+    get_achievement_summaries,
+    get_game_value_parallel,
+    get_inventory_values,
+    get_owned_games,
+    get_player_summaries,
+    vanity_url,
+)
 import requests
 
 app = Flask(__name__)
@@ -47,10 +54,15 @@ def lookup():
 
             # total value
             prices = get_game_value_parallel(app_ids)
+            achievements = get_achievement_summaries(steam_id, app_ids)
+            inventories = get_inventory_values(steam_id, app_ids)
             total = 0.0
             for game in games:
                 app_id = game['appid']
                 game['value'] = prices.get(app_id, 0.0)
+                game['achievements'] = achievements.get(app_id)
+                game['inventory'] = inventories.get(app_id)
+                game['inventory_supported'] = app_id in inventories
                 total += game['value']
 
             # sort games by playtime in descending order
@@ -63,13 +75,36 @@ def lookup():
             total_playtime_hours = round(total_playtime_minutes / 60, 2)
             average_playtime_hours = round(total_playtime_hours / total_games, 2) if total_games > 0 else 0
             total_value = round(total, 2)
+            achievement_summaries = [
+                summary for summary in achievements.values() if summary is not None
+            ]
+            total_achievements = sum(summary['unlocked'] for summary in achievement_summaries)
+            total_available_achievements = sum(summary['total'] for summary in achievement_summaries)
+            inventory_summaries = [
+                summary
+                for summary in inventories.values()
+                if summary is not None and summary['value'] is not None
+            ]
+            total_inventory_value = (
+                round(sum(summary['value'] for summary in inventory_summaries), 2)
+                if inventory_summaries
+                else None
+            )
+            inventory_value_is_partial = any(
+                summary.get('partial', False) for summary in inventory_summaries
+            )
 
             # add calculated statistics to user_data
             user_data['statistics'] = {
                 'total_games': total_games,
                 'total_playtime_hours': total_playtime_hours,
                 'average_playtime_hours': average_playtime_hours,
-                'total_value': total_value
+                'total_value': total_value,
+                'total_achievements': total_achievements,
+                'total_available_achievements': total_available_achievements,
+                'achievement_data_available': bool(achievement_summaries),
+                'total_inventory_value': total_inventory_value,
+                'inventory_value_is_partial': inventory_value_is_partial,
             }
             user_data['response']['games'] = sorted_games
         return render_template('results.html', user_data=user_data)
