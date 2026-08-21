@@ -430,9 +430,13 @@ table tr:hover {
 }
 
 .user-details p {
-    font-size: 1rem;
-    color: #c7c7d8;
+    font-size: 0.875rem;
+    color: #9b9bad;
     margin: 0;
+}
+
+.user-details .steam-id {
+    transform: translateY(-0.25rem);
 }
 
 @media (max-width: 600px) {

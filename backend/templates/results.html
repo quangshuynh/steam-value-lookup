@@ -26,6 +26,7 @@
                         <a href="{{ user_data['player']['profile_url'] }}" target="_blank">
                             <h2>User: {{ user_data['player']['name'] }}</h2>
                         </a>
+                        <p class="steam-id">steamID64: {{ user_data['player']['steamid'] }}</p>
                     </div>
                 </div>
                 <div class="stats-container">
@@ -55,9 +56,17 @@
                         <h3>Total Achievements:</h3>
                         <p id="total-achievements">
                             {% if user_data['statistics']['achievement_data_available'] %}
-                                {{ user_data['statistics']['total_achievements'] }} / {{ user_data['statistics']['total_available_achievements'] }}
+                                {{ user_data['statistics']['total_achievements'] }} / {{ user_data['statistics']['total_available_achievements'] }}{% if user_data['statistics']['achievement_data_is_partial'] %}*{% endif %}
+                            {% elif user_data['statistics']['achievement_status'] == 'rate_limited' %}
+                                Rate limited
+                            {% elif user_data['statistics']['achievement_status'] == 'timeout' %}
+                                Request timed out
+                            {% elif user_data['statistics']['achievement_status'] == 'private' %}
+                                Private game details
+                            {% elif user_data['statistics']['achievement_status'] == 'api_unavailable' %}
+                                Steam API unavailable
                             {% else %}
-                                N/A
+                                No achievement data
                             {% endif %}
                         </p>
                     </div>
@@ -66,10 +75,24 @@
                         <p id="inventory-value">
                             {% if user_data['statistics']['total_inventory_value'] is not none %}
                                 ${{ '%.2f'|format(user_data['statistics']['total_inventory_value']) }}{% if user_data['statistics']['inventory_value_is_partial'] %}*{% endif %}
-                            {% elif not user_data['statistics']['inventory_api_configured'] %}
-                                SteamWebAPI API key required
+                            {% elif user_data['statistics']['inventory_status'] == 'not_configured' %}
+                                SteamWebAPI key required
+                            {% elif user_data['statistics']['inventory_status'] == 'auth_error' %}
+                                Invalid SteamWebAPI key
+                            {% elif user_data['statistics']['inventory_status'] == 'quota_exhausted' %}
+                                SteamWebAPI quota exhausted
+                            {% elif user_data['statistics']['inventory_status'] == 'rate_limited' %}
+                                Rate limited
+                            {% elif user_data['statistics']['inventory_status'] == 'timeout' %}
+                                Request timed out
+                            {% elif user_data['statistics']['inventory_status'] == 'private' %}
+                                Private inventory
+                            {% elif user_data['statistics']['inventory_status'] == 'prices_unavailable' %}
+                                Prices unavailable
+                            {% elif user_data['statistics']['inventory_status'] == 'no_supported_games' %}
+                                No supported inventories
                             {% else %}
-                                N/A
+                                SteamWebAPI unavailable
                             {% endif %}
                         </p>
                     </div>
@@ -109,10 +132,20 @@
                                     <td>{{ game['name'] }}</td>
                                     <td>{{ (game['playtime_forever'] / 60) | round(2) }}</td>
                                     <td>
-                                        {% if game.get('achievements') %}
+                                        {% if game.get('achievements') and game['achievements']['status'] == 'ok' %}
                                             {{ game['achievements']['unlocked'] }} / {{ game['achievements']['total'] }}
+                                        {% elif game.get('achievements') and game['achievements']['status'] == 'rate_limited' %}
+                                            Rate limited
+                                        {% elif game.get('achievements') and game['achievements']['status'] == 'timeout' %}
+                                            Timed out
+                                        {% elif game.get('achievements') and game['achievements']['status'] == 'private' %}
+                                            Private
+                                        {% elif game.get('achievements') and game['achievements']['status'] == 'api_unavailable' %}
+                                            API unavailable
+                                        {% elif game.get('achievements') and game['achievements']['status'] == 'not_checked' %}
+                                            Not checked
                                         {% else %}
-                                            N/A
+                                            No achievements
                                         {% endif %}
                                     </td>
                                     <td data-value="{{ game['value'] if game.get('value') is not none else '' }}">
@@ -129,6 +162,14 @@
                                             Private inventory
                                         {% elif game.get('inventory') and game['inventory']['status'] == 'not_configured' %}
                                             SteamWebAPI key required
+                                        {% elif game.get('inventory') and game['inventory']['status'] == 'auth_error' %}
+                                            Invalid API key
+                                        {% elif game.get('inventory') and game['inventory']['status'] == 'quota_exhausted' %}
+                                            Quota exhausted
+                                        {% elif game.get('inventory') and game['inventory']['status'] == 'rate_limited' %}
+                                            Rate limited
+                                        {% elif game.get('inventory') and game['inventory']['status'] == 'timeout' %}
+                                            Timed out
                                         {% elif game.get('inventory') and game['inventory']['status'] == 'api_unavailable' %}
                                             API unavailable
                                         {% elif game.get('inventory') and game['inventory']['status'] == 'prices_unavailable' %}

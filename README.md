@@ -28,7 +28,8 @@ Steam Value Lookup is a Flask web application that analyzes a Steam user's game 
 1. The app resolves a vanity name to a SteamID when necessary.
 2. Steam's Web API returns the user's profile and owned games.
 3. Store prices are requested concurrently for the returned app IDs.
-4. Flask renders the results page with calculated library statistics.
+4. Achievement data is requested for games with recorded playtime.
+5. Flask renders the results page with calculated library statistics.
 
 Price data is estimated based on current U.S. store prices. Free games are listed as `$0.00`, while unavailable, delisted, or price-hidden games are listed as `N/A`.
 

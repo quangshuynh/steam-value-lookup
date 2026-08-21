@@ -122,16 +122,25 @@ def get_achievement_summaries(steam_id, app_ids):
             data = get_player_achievements(steam_id, app_id)
             player_stats = data.get("playerstats", {})
             if not player_stats.get("success", False):
-                return app_id, None
+                return app_id, {"status": "unavailable"}
 
             achievements = player_stats.get("achievements", [])
             return app_id, {
+                "status": "ok",
                 "unlocked": sum(item.get("achieved", 0) == 1 for item in achievements),
                 "total": len(achievements),
             }
+        except requests.Timeout:
+            return app_id, {"status": "timeout"}
+        except requests.HTTPError as error:
+            status_code = error.response.status_code if error.response is not None else None
+            if status_code == 429:
+                return app_id, {"status": "rate_limited"}
+            if status_code in (401, 403):
+                return app_id, {"status": "private"}
+            return app_id, {"status": "api_unavailable"}
         except (requests.RequestException, AttributeError, TypeError, ValueError):
-            # Many games have no achievements, and private profiles return an error.
-            return app_id, None
+            return app_id, {"status": "api_unavailable"}
 
     summaries = {}
     with ThreadPoolExecutor(max_workers=8) as executor:
@@ -173,14 +182,14 @@ def get_game_value_parallel(app_ids):
         if app_id in GAME_PRICE_CACHE
     }
 
-    def fetch_price(app_id):
+    def fetch_price_batch(batch):
         """
-        fetch the current store value for one steam game
-        :param app_id: steam application id
-        :returns: application id and current store value
+        fetch current store values for one batch of steam games
+        :param batch: steam application ids in the request batch
+        :returns: application ids and current store values
         """
         params = {
-            "appids": app_id,
+            "appids": ",".join(str(app_id) for app_id in batch),
             "cc": "us",
             "l": "en",
         }
@@ -199,34 +208,40 @@ def get_game_value_parallel(app_ids):
                     continue
 
                 response.raise_for_status()
-                payload = response.json().get(str(app_id), {})
-                if not payload.get("success"):
-                    return app_id, None
-
-                game_data = payload.get("data", {})
-                if game_data.get("is_free"):
-                    return app_id, 0.0
-
-                final_price = game_data.get("price_overview", {}).get("final")
-                if isinstance(final_price, (int, float)):
-                    return app_id, final_price / 100
-                return app_id, None
+                payload = response.json()
+                batch_results = []
+                for app_id in batch:
+                    app_payload = payload.get(str(app_id), {})
+                    game_data = app_payload.get("data", {})
+                    price = None
+                    if app_payload.get("success") and game_data.get("is_free"):
+                        price = 0.0
+                    elif app_payload.get("success"):
+                        final_price = game_data.get("price_overview", {}).get("final")
+                        if isinstance(final_price, (int, float)):
+                            price = final_price / 100
+                    batch_results.append((app_id, price))
+                return batch_results
             except (requests.RequestException, AttributeError, TypeError, ValueError) as error:
                 if attempt < 2:
                     time.sleep(0.5 * (2 ** attempt))
                     continue
-                logger.info("Store price unavailable for app %s: %s", app_id, error)
-        return app_id, None
+                logger.info("Store prices unavailable for app batch %s: %s", batch, error)
+        return [(app_id, None) for app_id in batch]
 
     missing_app_ids = [app_id for app_id in app_ids if app_id not in results]
-    # Retries absorb Store throttling while a small pool keeps lookups responsive.
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        futures = [executor.submit(fetch_price, app_id) for app_id in missing_app_ids]
+    # The Store endpoint only reliably returns complete data for one app per request.
+    batches = [[app_id] for app_id in missing_app_ids]
+    if not batches:
+        return results
+
+    with ThreadPoolExecutor(max_workers=min(6, len(batches))) as executor:
+        futures = [executor.submit(fetch_price_batch, batch) for batch in batches]
         for future in as_completed(futures):
-            app_id, price = future.result()
-            results[app_id] = price
-            if price is not None:
-                GAME_PRICE_CACHE[app_id] = price
+            for app_id, price in future.result():
+                results[app_id] = price
+                if price is not None:
+                    GAME_PRICE_CACHE[app_id] = price
     return results
 
 
@@ -260,19 +275,32 @@ def get_inventory_values(steam_id, app_ids):
             response = requests.get(
                 "https://www.steamwebapi.com/steam/api/inventory",
                 params={
+                    "key": Config.STEAMWEBAPI_KEY,
                     "steam_id": steam_id,
                     "game": game,
+                    "parse": 1,
                     "with_prices": 1,
                     "group": 1,
                     "currency": "USD",
                     "production": 1,
+                    "select": (
+                        "count,amount,pricelatest,pricelatestsell,"
+                        "pricemedian,pricemix,pricereal"
+                    ),
                     "limit": 10000,
                 },
                 headers={"X-API-Key": Config.STEAMWEBAPI_KEY, **STEAM_HEADERS},
-                timeout=30,
+                timeout=12,
             )
+            if response.status_code == 401:
+                return app_id, {"status": "auth_error", "value": None, "partial": False}
             if response.status_code == 403:
-                return app_id, {"status": "private", "value": None, "partial": False}
+                status = _inventory_http_status(response)
+                return app_id, {"status": status, "value": None, "partial": False}
+            if response.status_code == 402:
+                return app_id, {"status": "quota_exhausted", "value": None, "partial": False}
+            if response.status_code == 429:
+                return app_id, {"status": "rate_limited", "value": None, "partial": False}
             if response.status_code in (410, 411):
                 return app_id, {"status": "ok", "value": 0.0, "partial": False, "item_count": 0}
             response.raise_for_status()
@@ -312,17 +340,39 @@ def get_inventory_values(steam_id, app_ids):
                 "partial": unpriced_items > 0,
                 "item_count": item_count,
             }
+        except requests.Timeout as error:
+            logger.info("SteamWebAPI inventory timed out for app %s: %s", app_id, error)
+            return app_id, {"status": "timeout", "value": None, "partial": False}
         except (requests.RequestException, AttributeError, TypeError, ValueError) as error:
             logger.info("SteamWebAPI inventory unavailable for app %s: %s", app_id, error)
             return app_id, {"status": "api_unavailable", "value": None, "partial": False}
 
     summaries = {}
-    with ThreadPoolExecutor(max_workers=4) as executor:
+    with ThreadPoolExecutor(max_workers=len(supported_games) or 1) as executor:
         futures = [executor.submit(fetch_inventory, app_id, game) for app_id, game in supported_games]
         for future in as_completed(futures):
             app_id, summary = future.result()
             summaries[app_id] = summary
     return summaries
+
+
+def _inventory_http_status(response):
+    """
+    classify an inventory authentication or privacy response
+    :param response: steamwebapi http response
+    :returns: normalized inventory status
+    """
+    try:
+        payload = response.json()
+        message = str(payload).lower()
+    except (ValueError, TypeError):
+        message = response.text.lower()
+
+    if "credit" in message or "quota" in message or "limit" in message:
+        return "quota_exhausted"
+    if "key" in message or "auth" in message or "unauthorized" in message:
+        return "auth_error"
+    return "private"
 
 
 def _inventory_items(payload):

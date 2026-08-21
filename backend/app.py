@@ -61,11 +61,20 @@ def lookup():
         if 'games' in user_data['response']:
             games = user_data['response']['games'] 
             app_ids = [game['appid'] for game in games]
+            achievement_app_ids = [
+                game['appid']
+                for game in games
+                if game.get('playtime_forever', 0) > 0
+            ]
 
             # total value
             with ThreadPoolExecutor(max_workers=3) as executor:
                 price_future = executor.submit(get_game_value_parallel, app_ids)
-                achievement_future = executor.submit(get_achievement_summaries, steam_id, app_ids)
+                achievement_future = executor.submit(
+                    get_achievement_summaries,
+                    steam_id,
+                    achievement_app_ids,
+                )
                 inventory_future = executor.submit(get_inventory_values, steam_id, app_ids)
                 prices = price_future.result()
                 achievements = achievement_future.result()
@@ -75,7 +84,7 @@ def lookup():
             for game in games:
                 app_id = game['appid']
                 game['value'] = prices.get(app_id)
-                game['achievements'] = achievements.get(app_id)
+                game['achievements'] = achievements.get(app_id, {'status': 'not_checked'})
                 game['inventory'] = inventories.get(app_id)
                 game['inventory_supported'] = app_id in inventories
                 if game['value'] is not None:
@@ -93,10 +102,30 @@ def lookup():
             average_playtime_hours = round(total_playtime_hours / total_games, 2) if total_games > 0 else 0
             total_value = round(total, 2) if priced_games else None
             achievement_summaries = [
-                summary for summary in achievements.values() if summary is not None
+                summary
+                for summary in achievements.values()
+                if summary.get('status') == 'ok'
             ]
             total_achievements = sum(summary['unlocked'] for summary in achievement_summaries)
             total_available_achievements = sum(summary['total'] for summary in achievement_summaries)
+            achievement_statuses = [
+                summary.get('status', 'api_unavailable')
+                for summary in achievements.values()
+                if summary.get('status') != 'ok'
+            ]
+            achievement_status = 'ok'
+            if not achievement_summaries:
+                achievement_status = next(
+                    (
+                        status
+                        for status in (
+                            'rate_limited', 'timeout', 'private',
+                            'api_unavailable', 'unavailable'
+                        )
+                        if status in achievement_statuses
+                    ),
+                    'unavailable',
+                )
             inventory_summaries = [
                 summary
                 for summary in inventories.values()
@@ -111,6 +140,29 @@ def lookup():
                 summary.get('partial', False) or summary.get('status') != 'ok'
                 for summary in inventories.values()
             )
+            inventory_statuses = [
+                summary.get('status', 'api_unavailable')
+                for summary in inventories.values()
+            ]
+            inventory_status = 'ok'
+            if total_inventory_value is None:
+                if not Config.STEAMWEBAPI_KEY:
+                    inventory_status = 'not_configured'
+                elif not inventories:
+                    inventory_status = 'no_supported_games'
+                else:
+                    inventory_status = next(
+                        (
+                            status
+                            for status in (
+                                'auth_error', 'quota_exhausted', 'rate_limited',
+                                'timeout', 'private', 'prices_unavailable',
+                                'api_unavailable'
+                            )
+                            if status in inventory_statuses
+                        ),
+                        'api_unavailable',
+                    )
 
             # add calculated statistics to user_data
             user_data['statistics'] = {
@@ -122,9 +174,15 @@ def lookup():
                 'total_achievements': total_achievements,
                 'total_available_achievements': total_available_achievements,
                 'achievement_data_available': bool(achievement_summaries),
+                'achievement_data_is_partial': bool(
+                    achievement_summaries
+                    and (achievement_statuses or len(achievement_app_ids) < len(app_ids))
+                ),
+                'achievement_status': achievement_status,
                 'total_inventory_value': total_inventory_value,
                 'inventory_value_is_partial': inventory_value_is_partial,
                 'inventory_api_configured': bool(Config.STEAMWEBAPI_KEY),
+                'inventory_status': inventory_status,
             }
             user_data['response']['games'] = sorted_games
         return render_template('results.html', user_data=user_data)
