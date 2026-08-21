@@ -19,10 +19,18 @@ init_db(app)
 
 @app.route('/')
 def index():
+    """
+    render the steam id lookup page
+    :returns: rendered lookup page
+    """
     return render_template('index.html')
 
 @app.route('/lookup', methods=['POST'])
 def lookup():
+    """
+    fetch and render steam profile library and inventory values
+    :returns: rendered results page or lookup page with an error
+    """
     steamid_entry = request.form.get('steam_id')
     if not steamid_entry:
         return render_template('index.html', error="Please provide a valid SteamID")
@@ -55,13 +63,13 @@ def lookup():
             app_ids = [game['appid'] for game in games]
 
             # total value
-            with ThreadPoolExecutor(max_workers=3) as executor:
+            with ThreadPoolExecutor(max_workers=2) as executor:
                 price_future = executor.submit(get_game_value_parallel, app_ids)
                 achievement_future = executor.submit(get_achievement_summaries, steam_id, app_ids)
-                inventory_future = executor.submit(get_inventory_values, steam_id, app_ids)
                 prices = price_future.result()
                 achievements = achievement_future.result()
-                inventories = inventory_future.result()
+            # Finish rate-sensitive Store pricing before third-party inventory calls.
+            inventories = get_inventory_values(steam_id, app_ids)
             total = 0.0
             priced_games = 0
             for game in games:
@@ -100,7 +108,8 @@ def lookup():
                 else None
             )
             inventory_value_is_partial = any(
-                summary.get('partial', False) for summary in inventory_summaries
+                summary.get('partial', False) or summary.get('status') != 'ok'
+                for summary in inventories.values()
             )
 
             # add calculated statistics to user_data

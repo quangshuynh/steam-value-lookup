@@ -1,4 +1,7 @@
-// automatically update the year in the footer
+/**
+ * initialize footer and lookup loading behavior
+ * :returns: none
+ */
 document.addEventListener("DOMContentLoaded", () => {
     const yearSpan = document.getElementById('current-year');
     if (yearSpan) {
@@ -18,12 +21,20 @@ document.addEventListener("DOMContentLoaded", () => {
             'Preparing your results...'
         ];
 
+        /**
+         * show lookup progress after form submission
+         * :returns: none
+         */
         lookupForm.addEventListener('submit', () => {
             lookupButton.disabled = true;
             searchContainer.hidden = true;
             loadingPanel.hidden = false;
 
             let messageIndex = 0;
+            /**
+             * advance the displayed lookup progress message
+             * :returns: none
+             */
             window.setInterval(() => {
                 loadingStatus.textContent = messages[messageIndex % messages.length];
                 messageIndex += 1;
@@ -33,13 +44,23 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-// sorting table
+/**
+ * sort game table rows using the selected order
+ * :param order: selected table sort order
+ * :returns: none
+ */
 function sortTable(order) {
     const table = document.querySelector('.games-list table tbody');
     if (!table) return;
     const rows = Array.from(table.querySelectorAll('tr'));
     const sortingMessage = document.getElementById('sorting-message');
 
+    /**
+     * compare two game table rows using the selected order
+     * :param a: first game table row
+     * :param b: second game table row
+     * :returns: row sort position
+     */
     rows.sort((a, b) => {
         const nameA = a.cells[1].textContent.trim().toLowerCase();
         const nameB = b.cells[1].textContent.trim().toLowerCase();
@@ -75,6 +96,10 @@ function sortTable(order) {
         }
     });
 
-    // re-append sorted rows
+    /**
+     * append a sorted game table row
+     * :param row: game table row to append
+     * :returns: appended game table row
+     */
     rows.forEach(row => table.appendChild(row));
 }

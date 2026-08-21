@@ -1,12 +1,20 @@
 from database import db
 
 class User(db.Model):
+    """
+    represent a steam user database record
+    :returns: steam user model
+    """
     id = db.Column(db.Integer, primary_key=True)
     steam_id = db.Column(db.String(20), unique=True, nullable=False)
     username = db.Column(db.String(100))
     profile_url = db.Column(db.String(200))
 
 class Game(db.Model):
+    """
+    represent an owned game database record
+    :returns: owned game model
+    """
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     name = db.Column(db.String(200))
@@ -14,6 +22,10 @@ class Game(db.Model):
     value = db.Column(db.Float)
 
 class InventoryItem(db.Model):
+    """
+    represent an inventory item database record
+    :returns: inventory item model
+    """
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     game_id = db.Column(db.Integer, db.ForeignKey('game.id'))

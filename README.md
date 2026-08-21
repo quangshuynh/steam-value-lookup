@@ -67,7 +67,7 @@ Install the dependencies:
 pip install -r requirements.txt
 ```
 
-The `requirements.txt` file contains the Flask application and HTTP client dependencies needed to run the project.
+The `requirements.txt` file contains the application, HTTP client, database, environment, and test dependencies needed to develop and run the project.
 
 Create a `.env` file in the project root:
 
@@ -97,21 +97,38 @@ Open [http://127.0.0.1:5000](http://127.0.0.1:5000) in a browser.
 
 The development server runs with Flask debug mode enabled by `app.py`. For production, use a WSGI server and disable debug mode.
 
+## Run Tests
+
+Run the test suite from the `backend` directory so the application modules resolve correctly:
+
+```bash
+cd backend
+python -m pytest tests -v
+```
+
+The tests mock external API calls, so running them does not consume Steam or SteamWebAPI quotas and does not require API keys.
+
 ## Project Structure
 
 ```text
 .
-├── backend/
-│   ├── app.py              # Flask routes and lookup workflow
-│   ├── config.py           # Environment-based configuration
-│   ├── database.py         # SQLAlchemy setup and table initialization
-│   ├── models.py           # User, game, and inventory models
-│   ├── steam_api.py        # Steam API and store-price helpers
-│   ├── static/             # CSS and browser-side sorting logic
-│   └── templates/          # Search and results pages
-├── instance/
-│   └── steam_value_lookup.db
-└── steam_value_lookup.sql  # Reference SQL schema
+|-- backend/
+|   |-- app.py                 # Flask routes and lookup workflow
+|   |-- config.py              # Environment-based configuration
+|   |-- database.py            # SQLAlchemy setup and table initialization
+|   |-- models.py              # User, game, and inventory models
+|   |-- steam_api.py           # Steam API and valuation helpers
+|   |-- static/                # CSS and browser-side sorting logic
+|   |-- templates/             # Search and results pages
+|   `-- tests/
+|       |-- __init__.py
+|       `-- test_steam_api.py  # Steam API valuation tests
+|-- docs/
+|   `-- images/                # README screenshots
+|-- instance/
+|   `-- steam_value_lookup.db  # Local SQLite database
+|-- requirements.txt           # Runtime and test dependencies
+`-- steam_value_lookup.sql     # Reference SQL schema
 ```
 
 ## Routes
@@ -134,4 +151,4 @@ The development server runs with Flask debug mode enabled by `app.py`. For produ
 - Cache price lookups and add API request timeouts/retry handling for all endpoints.
 - Persist lookup results using the existing SQLAlchemy models.
 - Add currency selection and clearer handling for private profiles.
-- Add automated tests for API failures, empty libraries, vanity-name resolution, and price parsing.
+- Expand automated coverage for empty libraries, vanity-name resolution, and route errors.
