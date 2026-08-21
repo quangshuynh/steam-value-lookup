@@ -30,7 +30,7 @@ Steam Value Lookup is a Flask web application that analyzes a Steam user's game 
 3. Store prices are requested concurrently for the returned app IDs.
 4. Flask renders the results page with calculated library statistics.
 
-Price data is an estimate based on the current US store price. Free, unavailable, delisted, and price-hidden games are reported as `$0.00`.
+Price data is estimated based on current U.S. store prices. Free games are listed as `$0.00`, while unavailable, delisted, or price-hidden games are listed as `N/A`.
 
 ## Requirements
 
@@ -79,8 +79,8 @@ DATABASE_URL=sqlite:///steam_value_lookup.db
 
 API keys can be obtained from:
 
-- [`STEAM_API_KEY` — Steam Web API](https://steamcommunity.com/dev/apikey)
-- [`STEAMWEBAPI_KEY` — SteamWebAPI](https://www.steamwebapi.com/dashboard)
+- [`STEAM_API_KEY` - Steam Web API](https://steamcommunity.com/dev/apikey)
+- [`STEAMWEBAPI_KEY` - SteamWebAPI](https://www.steamwebapi.com/dashboard)
 
 `DATABASE_URL` is optional. If omitted, the app uses SQLite. Do not commit `.env` or expose your API keys.
 
