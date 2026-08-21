@@ -52,8 +52,10 @@ Activate the virtual environment:
 Install the dependencies:
 
 ```bash
-pip install Flask Flask-SQLAlchemy python-dotenv requests
+pip install -r requirements.txt
 ```
+
+The `requirements.txt` file contains the Flask application and HTTP client dependencies needed to run the project.
 
 Create a `.env` file in the project root:
 
@@ -111,7 +113,6 @@ The development server runs with Flask debug mode enabled by `app.py`. For produ
 
 ## Future Improvements
 
-- Add a `requirements.txt` or `pyproject.toml` for reproducible installs.
 - Cache price lookups and add API request timeouts/retry handling for all endpoints.
 - Persist lookup results using the existing SQLAlchemy models.
 - Add currency selection and clearer handling for private profiles.

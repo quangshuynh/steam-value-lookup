@@ -1,1 +1,48 @@
+# Environment variables and local secrets
 .env
+.env.*
+!.env.example
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Flask runtime data and local databases
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# Test, coverage, and type-checker caches
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+
+# Packaging and build output
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# Editors and operating systems
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+Desktop.ini
