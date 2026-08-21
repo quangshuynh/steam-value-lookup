@@ -18,6 +18,8 @@ function sortTable(order) {
         const nameB = b.cells[1].textContent.trim().toLowerCase();
         const hoursA = parseFloat(a.cells[2].textContent.trim());
         const hoursB = parseFloat(b.cells[2].textContent.trim());
+        const valueA = parseFloat(a.cells[4].dataset.value);
+        const valueB = parseFloat(b.cells[4].dataset.value);
 
         if(order === 'hours-desc') {
             sortingMessage.textContent = 'Here are your Steam games sorted by playtime (highest to lowest)';
@@ -31,6 +33,18 @@ function sortTable(order) {
         } else if(order === 'alpha-asc') {
             sortingMessage.textContent = 'Here are your Steam games sorted alphabetically (A to Z)';
             return nameA.localeCompare(nameB);
+        } else if(order === 'value-desc') {
+            sortingMessage.textContent = 'Here are your Steam games sorted by value (highest to lowest)';
+            if (Number.isNaN(valueA) && Number.isNaN(valueB)) return 0;
+            if (Number.isNaN(valueA)) return 1;
+            if (Number.isNaN(valueB)) return -1;
+            return valueB - valueA;
+        } else if(order === 'value-asc') {
+            sortingMessage.textContent = 'Here are your Steam games sorted by value (lowest to highest)';
+            if (Number.isNaN(valueA) && Number.isNaN(valueB)) return 0;
+            if (Number.isNaN(valueA)) return 1;
+            if (Number.isNaN(valueB)) return -1;
+            return valueA - valueB;
         }
     });
 

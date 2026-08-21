@@ -192,6 +192,7 @@ table td:first-child {
 /* Sort Buttons */
 .sort-buttons {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     gap: 1rem;
     margin: 1rem 0;

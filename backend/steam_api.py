@@ -17,6 +17,16 @@ INVENTORY_CONTEXTS = {
 }
 MAX_MARKET_ITEMS_PER_GAME = 40
 MARKET_PRICE_CACHE = {}
+GAME_PRICE_CACHE = {}
+STEAM_HEADERS = {
+    "Accept": "application/json",
+    "Accept-Language": "en-US,en;q=0.9",
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+}
 
 
 def get_owned_games(steam_id):
@@ -113,36 +123,50 @@ def get_user_game_stats(steam_id, app_id):
 
 def get_game_value_parallel(app_ids):
     url = "https://store.steampowered.com/api/appdetails"
-    results = {}
+    results = {
+        app_id: GAME_PRICE_CACHE[app_id]
+        for app_id in app_ids
+        if app_id in GAME_PRICE_CACHE
+    }
 
-    # helper function to fetch the price for a single app ID
     def fetch_price(app_id):
         params = {
             "appids": app_id,
-            "cc": "us"
+            "cc": "us",
+            "l": "en",
         }
         try:
-            response = requests.get(url, params=params, timeout=5)
+            response = requests.get(
+                url,
+                params=params,
+                headers=STEAM_HEADERS,
+                timeout=15,
+            )
             response.raise_for_status()
-            data = response.json()
-            print(data)
-            if data[str(app_id)]['success']:
-                game_data = data[str(app_id)]['data']
-                if 'price_overview' in game_data:
-                    return app_id, float(game_data['price_overview']['final_formatted'].replace('$', '').replace(',', ''))
-                else:
-                    return app_id, 0.0
-            else:
-                return app_id, 0.0
-        except Exception:
-            return app_id, 0.0
+            payload = response.json().get(str(app_id), {})
+            if not payload.get("success"):
+                return app_id, None
 
-    # use ThreadPoolExecutor to fetch prices concurrently
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [executor.submit(fetch_price, app_id) for app_id in app_ids]
+            game_data = payload.get("data", {})
+            if game_data.get("is_free"):
+                return app_id, 0.0
+
+            final_price = game_data.get("price_overview", {}).get("final")
+            if isinstance(final_price, int):
+                return app_id, final_price / 100
+            return app_id, None
+        except (requests.RequestException, AttributeError, TypeError, ValueError) as error:
+            logger.info("Store price unavailable for app %s: %s", app_id, error)
+            return app_id, None
+
+    missing_app_ids = [app_id for app_id in app_ids if app_id not in results]
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = [executor.submit(fetch_price, app_id) for app_id in missing_app_ids]
         for future in as_completed(futures):
             app_id, price = future.result()
             results[app_id] = price
+            if price is not None:
+                GAME_PRICE_CACHE[app_id] = price
     return results
 
 
@@ -169,6 +193,7 @@ def _get_market_price(app_id, market_hash_name):
                 "currency": 1,
                 "market_hash_name": market_hash_name,
             },
+            headers={**STEAM_HEADERS, "Referer": "https://steamcommunity.com/market/"},
             timeout=10,
         )
         response.raise_for_status()
@@ -192,7 +217,12 @@ def get_inventory(steam_id, app_id, context_id=2):
         if start_asset_id:
             params["start_assetid"] = start_asset_id
 
-        response = requests.get(url, params=params, timeout=15)
+        response = requests.get(
+            url,
+            params=params,
+            headers={**STEAM_HEADERS, "Referer": "https://steamcommunity.com/inventory/"},
+            timeout=15,
+        )
         response.raise_for_status()
         data = response.json()
         if not data.get("success"):
@@ -224,11 +254,19 @@ def get_inventory_values(steam_id, app_ids):
             inventory = get_inventory(steam_id, app_id, context_id)
         except (requests.RequestException, AttributeError, TypeError, ValueError) as error:
             logger.info("Inventory unavailable for app %s: %s", app_id, error)
-            summaries[app_id] = None
+            summaries[app_id] = {
+                "status": "private_or_unavailable",
+                "value": None,
+                "partial": False,
+            }
             continue
 
         if inventory is None:
-            summaries[app_id] = None
+            summaries[app_id] = {
+                "status": "private_or_unavailable",
+                "value": None,
+                "partial": False,
+            }
             continue
 
         market_items = {}
@@ -256,6 +294,7 @@ def get_inventory_values(steam_id, app_ids):
                 time.sleep(1)
 
         summaries[app_id] = {
+            "status": "ok" if not market_items or priced_types else "prices_unavailable",
             "item_count": sum(int(asset.get("amount", 1)) for asset in inventory["assets"]),
             "marketable_item_count": marketable_item_count,
             "value": (

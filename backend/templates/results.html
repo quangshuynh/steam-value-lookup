@@ -43,7 +43,13 @@
                     </div>
                     <div class="stat">
                         <h3>Total Value (USD):</h3>
-                        <p id="total-value">${{ user_data['statistics']['total_value'] }}</p>
+                        <p id="total-value">
+                            {% if user_data['statistics']['total_value'] is not none %}
+                                ${{ '%.2f'|format(user_data['statistics']['total_value']) }}{% if user_data['statistics']['game_value_is_partial'] %}*{% endif %}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </p>
                     </div>
                     <div class="stat">
                         <h3>Total Achievements:</h3>
@@ -71,6 +77,8 @@
                     <button onclick="sortTable('hours-asc')">Hours Ascending</button>
                     <button onclick="sortTable('alpha-desc')">Alphabetically Descending</button>
                     <button onclick="sortTable('alpha-asc')">Alphabetically Ascending</button>
+                    <button onclick="sortTable('value-desc')">Value Descending</button>
+                    <button onclick="sortTable('value-asc')">Value Ascending</button>
                 </div>
                 <div class="games-list">
                     <h3>Owned Games</h3>
@@ -102,14 +110,22 @@
                                             N/A
                                         {% endif %}
                                     </td>
-                                    <td>${{ game.get('value', 'N/A') }}</td>
+                                    <td data-value="{{ game['value'] if game.get('value') is not none else '' }}">
+                                        {% if game.get('value') is not none %}
+                                            ${{ '%.2f'|format(game['value']) }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         {% if game.get('inventory') and game['inventory']['value'] is not none %}
                                             ${{ '%.2f'|format(game['inventory']['value']) }}{% if game['inventory']['partial'] %}*{% endif %}
-                                        {% elif game.get('inventory_supported') %}
-                                            N/A
+                                        {% elif game.get('inventory') and game['inventory']['status'] == 'private_or_unavailable' %}
+                                            Private / unavailable
+                                        {% elif game.get('inventory') and game['inventory']['status'] == 'prices_unavailable' %}
+                                            Prices unavailable
                                         {% else %}
-                                            -
+                                            No Steam inventory
                                         {% endif %}
                                     </td>
                                 </tr>

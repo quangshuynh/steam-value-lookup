@@ -57,13 +57,16 @@ def lookup():
             achievements = get_achievement_summaries(steam_id, app_ids)
             inventories = get_inventory_values(steam_id, app_ids)
             total = 0.0
+            priced_games = 0
             for game in games:
                 app_id = game['appid']
-                game['value'] = prices.get(app_id, 0.0)
+                game['value'] = prices.get(app_id)
                 game['achievements'] = achievements.get(app_id)
                 game['inventory'] = inventories.get(app_id)
                 game['inventory_supported'] = app_id in inventories
-                total += game['value']
+                if game['value'] is not None:
+                    total += game['value']
+                    priced_games += 1
 
             # sort games by playtime in descending order
             sorted_games = sorted(games, key=lambda game: game.get('playtime_forever', 0), reverse=True)
@@ -74,7 +77,7 @@ def lookup():
             total_playtime_minutes = sum(game.get('playtime_forever', 0) for game in games)
             total_playtime_hours = round(total_playtime_minutes / 60, 2)
             average_playtime_hours = round(total_playtime_hours / total_games, 2) if total_games > 0 else 0
-            total_value = round(total, 2)
+            total_value = round(total, 2) if priced_games else None
             achievement_summaries = [
                 summary for summary in achievements.values() if summary is not None
             ]
@@ -100,6 +103,7 @@ def lookup():
                 'total_playtime_hours': total_playtime_hours,
                 'average_playtime_hours': average_playtime_hours,
                 'total_value': total_value,
+                'game_value_is_partial': priced_games < total_games,
                 'total_achievements': total_achievements,
                 'total_available_achievements': total_available_achievements,
                 'achievement_data_available': bool(achievement_summaries),
