@@ -1,6 +1,16 @@
 # Steam Value Lookup
 
-Steam Value Lookup is a small Flask web app that looks up a Steam user's library and estimates its current total store value. Enter a numeric SteamID or a Steam vanity name to view the user's profile, owned games, playtime statistics, and per-game prices.
+Steam Value Lookup is a Flask web application that analyzes a Steam user's game library and estimates its current total store value. Enter a numeric SteamID or Steam vanity name to view profile information, owned games, playtime statistics, and per-game prices.
+
+<p align="center">
+  <img src="./docs/images/steam-value-lookup.png"
+       alt="Steam Value Lookup showing analyzed Steam library values and statistics"
+       width="900">
+</p>
+
+<p align="center">
+  <em>Steam library analysis showing game values and aggregate library statistics</em>
+</p>
 
 ## Features
 
@@ -11,7 +21,7 @@ Steam Value Lookup is a small Flask web app that looks up a Steam user's library
 - Loads achievement totals and supported public inventory values.
 - Sorts games by playtime, name, or store value.
 - Links profiles, game thumbnails, and games back to Steam.
-- Creates a local SQLite database through Flask-SQLAlchemy.
+- Initializes a local SQLite database and SQLAlchemy models for application data.
 
 ## How It Works
 
@@ -25,8 +35,8 @@ Price data is an estimate based on the current US store price. Free, unavailable
 ## Requirements
 
 - Python 3.10 or newer
-- A Steam Web API key
-- A SteamWebAPI key for inventory valuation
+- A [Steam Web API key](https://steamcommunity.com/dev/apikey) for Steam profile and library data
+- A [SteamWebAPI key](https://www.steamwebapi.com/dashboard) for supported inventory valuation
 - A Steam profile with game details visible to the API
 
 ## Setup
@@ -67,7 +77,12 @@ STEAMWEBAPI_KEY=your_steamwebapi_key
 DATABASE_URL=sqlite:///steam_value_lookup.db
 ```
 
-`DATABASE_URL` is optional. If omitted, the app uses SQLite. Do not commit `.env` or expose your Steam API key.
+API keys can be obtained from:
+
+- [`STEAM_API_KEY` — Steam Web API](https://steamcommunity.com/dev/apikey)
+- [`STEAMWEBAPI_KEY` — SteamWebAPI](https://www.steamwebapi.com/dashboard)
+
+`DATABASE_URL` is optional. If omitted, the app uses SQLite. Do not commit `.env` or expose your API keys.
 
 ## Run Locally
 
@@ -114,7 +129,7 @@ The development server runs with Flask debug mode enabled by `app.py`. For produ
 - The current lookup flow does not persist fetched users or games to the database; the models and schema are available for future persistence work.
 - Steam owns the Steam trademarks and related content. This project is an independent tool and is not affiliated with Valve.
 
-## Future Improvements
+## Limitations and Future Improvements
 
 - Cache price lookups and add API request timeouts/retry handling for all endpoints.
 - Persist lookup results using the existing SQLAlchemy models.
