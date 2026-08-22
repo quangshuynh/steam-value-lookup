@@ -11,7 +11,8 @@ import app as app_module
 
 
 @pytest.fixture
-def client():
+def client(monkeypatch):
+    monkeypatch.setattr(app_module.Config, "STEAM_API_KEY", "test-key")
     app_module.app.config.update(
         TESTING=True,
     )
@@ -39,6 +40,68 @@ def test_index_renders_search_form(client):
     assert response.status_code == 200
     assert b'id="steam_id"' in response.data
     assert b"Vanity URL" in response.data
+
+
+def test_health_check_is_local_and_successful(client):
+    response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.get_json() == {"status": "ok"}
+
+
+@patch.object(app_module.Config, "STEAM_API_KEY", None)
+def test_lookup_reports_missing_server_api_configuration(client):
+    response = client.post("/lookup", data={"steam_id": "76561198000000000"})
+
+    assert response.status_code == 503
+    assert b"Steam API access is not configured" in response.data
+
+
+@patch.object(app_module.Config, "STEAM_API_KEY", "test-key")
+def test_lookup_rejects_invalid_numeric_steam_id(client):
+    response = client.post("/lookup", data={"steam_id": "12345"})
+
+    assert response.status_code == 200
+    assert b"exactly 17 digits" in response.data
+
+
+def test_lookup_rejects_missing_input(client):
+    response = client.post("/lookup", data={})
+
+    assert response.status_code == 200
+    assert b"Please provide a valid SteamID" in response.data
+
+
+@patch.object(app_module.Config, "STEAM_API_KEY", "test-key")
+def test_lookup_rejects_excessive_vanity_name(client):
+    response = client.post("/lookup", data={"steam_id": "a" * 65})
+
+    assert response.status_code == 200
+    assert b"vanity name is too long" in response.data
+
+
+@patch.object(app_module, "get_owned_games", side_effect=app_module.requests.ConnectionError())
+def test_lookup_handles_upstream_network_failure(owned_games, client):
+    response = client.post("/lookup", data={"steam_id": "76561198000000000"})
+
+    assert response.status_code == 502
+    assert b"Steam is temporarily unavailable" in response.data
+
+
+@patch.object(app_module, "get_owned_games")
+def test_lookup_handles_rejected_steam_api_key_without_exposing_details(owned_games, client):
+    response = app_module.requests.Response()
+    response.status_code = 403
+    owned_games.side_effect = app_module.requests.HTTPError(
+        "upstream detail must not be rendered",
+        response=response,
+    )
+
+    result = client.post("/lookup", data={"steam_id": "76561198000000000"})
+
+    assert result.status_code == 502
+    assert b"Steam is temporarily unavailable" in result.data
+    assert b"upstream detail" not in result.data
 
 
 @patch.object(app_module, "get_inventory_values", return_value={})

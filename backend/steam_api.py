@@ -44,7 +44,7 @@ def get_owned_games(steam_id):
         "include_played_free_games": True,
         "format": "json"
     }
-    response = requests.get(url, params=params)
+    response = requests.get(url, params=params, timeout=15)
     response.raise_for_status()
     return response.json()
 
@@ -61,7 +61,7 @@ def get_player_summaries(steam_id):
         "steamids": steam_id,
         "format": "json",
     }
-    response = requests.get(url, params=params)
+    response = requests.get(url, params=params, timeout=15)
     response.raise_for_status()
     return response.json()
 
@@ -78,7 +78,7 @@ def vanity_url(vanity_url):
         "vanityurl": vanity_url,
         "format": "json"
     }
-    response = requests.get(url, params=params)
+    response = requests.get(url, params=params, timeout=15)
     response.raise_for_status()
     data = response.json()
     if data['response']['success'] == 1:

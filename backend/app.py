@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 
-from flask import Flask, render_template, request
+from flask import Flask, jsonify, render_template, request
 from config import Config
 from database import init_db, db
 from steam_api import (
@@ -25,15 +25,33 @@ def index():
     """
     return render_template('index.html')
 
+
+@app.route('/health')
+def health():
+    """Return a lightweight health response without external API calls."""
+    return jsonify(status='ok')
+
 @app.route('/lookup', methods=['POST'])
 def lookup():
     """
     fetch and render steam profile library and inventory values
     :returns: rendered results page or lookup page with an error
     """
-    steamid_entry = request.form.get('steam_id')
+    if not Config.STEAM_API_KEY:
+        return render_template(
+            'index.html',
+            error="This demo is temporarily unavailable because Steam API access is not configured.",
+        ), 503
+
+    steamid_entry = request.form.get('steam_id', '').strip()
     if not steamid_entry:
         return render_template('index.html', error="Please provide a valid SteamID")
+
+    if steamid_entry.isdigit():
+        if len(steamid_entry) != 17:
+            return render_template('index.html', error="A SteamID must contain exactly 17 digits.")
+    elif len(steamid_entry) > 64:
+        return render_template('index.html', error="The vanity name is too long.")
 
     try:
         # vanity names
@@ -43,10 +61,12 @@ def lookup():
             steam_id = steamid_entry
 
         user_data = get_owned_games(steam_id)
+        if not isinstance(user_data.get('response'), dict):
+            raise ValueError("Steam library data is unavailable. Confirm that the profile and game details are public.")
 
         # player info
         player_data = get_player_summaries(steam_id)
-        if 'players' in player_data['response'] and player_data['response']['players']:
+        if 'players' in player_data.get('response', {}) and player_data['response']['players']:
             player = player_data['response']['players'][0]
             user_data['player'] = {
                 'steamid': player.get('steamid'),
@@ -56,6 +76,8 @@ def lookup():
                 'avatar_medium': player.get('avatarmedium'),
                 'avatar_full': player.get('avatarfull')
             }
+        else:
+            raise ValueError("Steam profile data is unavailable. Confirm that the profile is public.")
 
         # Steam omits "games" for an empty public library. Normalize that
         # response so the results page can still render zero-value statistics.
@@ -189,8 +211,11 @@ def lookup():
         return render_template('results.html', user_data=user_data)
     except ValueError as e:
         return render_template('index.html', error=str(e))
-    except requests.exceptions.HTTPError as e:
-        return render_template('index.html', error="Failed to fetch data from Steam API.")
+    except requests.exceptions.RequestException:
+        return render_template(
+            'index.html',
+            error="Steam is temporarily unavailable. Please try again in a moment.",
+        ), 502
 
 
 if __name__ == "__main__":
