@@ -124,6 +124,12 @@ main {
 .loading-panel[hidden] { display: none; }
 .loading-heading { font-size: 1.25rem; font-weight: 700; color: #e6e6ff; }
 .loading-panel p { margin: 0.65rem 0 1.2rem; color: #c7c7d8; }
+.loading-panel .loading-disclaimer {
+    margin: 1rem 0 0;
+    color: #aaa;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
 .progress-track { height: 8px; overflow: hidden; border-radius: 999px; background: #171720; }
 .progress-bar {
     width: 40%;
