@@ -88,6 +88,12 @@ main {
     color: #aaa;
 }
 
+.form-help {
+    color: #aaa;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
 .search-container button {
     padding: 0.8rem;
     border: none;

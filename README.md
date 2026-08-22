@@ -2,11 +2,17 @@
 
 <p align="center">
   <a href="https://github.com/quangshuynh/steam-value-lookup/actions/workflows/tests.yml"><img src="https://github.com/quangshuynh/steam-value-lookup/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
-  <img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python 3.10+">
+  <img src="https://img.shields.io/badge/python-3.12-blue" alt="Python 3.12">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
 </p>
 
 Steam Value Lookup is a Flask web application that analyzes a Steam user's game library and estimates its current total store value. Enter a numeric SteamID or Steam vanity name to view profile information, owned games, playtime statistics, and per-game prices.
+
+## Live Demo
+
+<!-- After deploying, replace the sentence below with: [Try the live demo](YOUR_RENDER_URL) -->
+
+Deployment URL coming soon. Hosted-demo visitors can enter a public Steam profile without supplying their own API keys.
 
 <p align="center">
   <img src="./docs/images/steam-value-lookup.png"
@@ -41,7 +47,7 @@ Price data is estimated based on current U.S. store prices. Free games are liste
 
 ## Requirements
 
-- Python 3.10 or newer
+- Python 3.12 (the deployment and CI version)
 - A [Steam Web API key](https://steamcommunity.com/dev/apikey) for Steam profile and library data
 - A [SteamWebAPI key](https://www.steamwebapi.com/dashboard) for supported inventory valuation
 - A Steam profile with game details visible to the API
@@ -84,7 +90,7 @@ STEAMWEBAPI_KEY=your_steamwebapi_key
 DATABASE_URL=sqlite:///steam_value_lookup.db
 ```
 
-API keys can be obtained from:
+These credentials are needed only when running your own local deployment. API keys can be obtained from:
 
 - [`STEAM_API_KEY` - Steam Web API](https://steamcommunity.com/dev/apikey)
 - [`STEAMWEBAPI_KEY` - SteamWebAPI](https://www.steamwebapi.com/dashboard)
@@ -103,6 +109,19 @@ python app.py
 Open [http://127.0.0.1:5000](http://127.0.0.1:5000) in a browser.
 
 The development server runs with Flask debug mode enabled by `app.py`. For production, use a WSGI server and disable debug mode.
+
+## Deploy on Render
+
+Create a Python web service from this repository using:
+
+```text
+Root Directory: (leave blank)
+Build Command: python -m pip install -r requirements.txt
+Start Command: gunicorn --chdir backend --workers 2 --timeout 120 --preload app:app
+Health Check Path: /health
+```
+
+Set `STEAM_API_KEY` in Render as a required secret environment variable. `STEAMWEBAPI_KEY` is optional and enables inventory valuation for supported games. `DATABASE_URL` is optional; lookup results are not persisted, so the default ephemeral SQLite database is sufficient for the demo.
 
 ## Run Tests
 
@@ -146,6 +165,7 @@ The tests cover vanity-name resolution, store pricing and achievement response h
 | Method | Route | Purpose |
 | --- | --- | --- |
 | `GET` | `/` | Displays the SteamID search form |
+| `GET` | `/health` | Returns a lightweight service health response |
 | `POST` | `/lookup` | Fetches and displays a user's library and estimated values |
 
 ## Privacy and API Notes
