@@ -10,9 +10,7 @@ Steam Value Lookup is a Flask web application that analyzes a Steam user's game 
 
 ## Live Demo
 
-<!-- After deploying, replace the sentence below with: [Try the live demo](YOUR_RENDER_URL) -->
-
-Deployment URL coming soon. Hosted-demo visitors can enter a public Steam profile without supplying their own API keys.
+### [Try the live demo →](https://steam-value-lookup.onrender.com/)
 
 <p align="center">
   <img src="./docs/images/steam-value-lookup.png"
