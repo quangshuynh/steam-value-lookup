@@ -36,7 +36,7 @@ def get_owned_games(steam_id):
     :param steam_id: steam id of the user
     :returns: owned games api response
     """
-    url = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/"
+    url = "https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/"
     params = {
         "key": Config.STEAM_API_KEY,   # steam api key
         "steamid": steam_id,
@@ -55,7 +55,7 @@ def get_player_summaries(steam_id):
     :param steam_id: steam id of the user
     :returns: player summaries api response
     """
-    url = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/"
+    url = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/"
     params = {
         "key": Config.STEAM_API_KEY,
         "steamids": steam_id,
@@ -72,7 +72,7 @@ def vanity_url(vanity_url):
     :param vanity_url: vanity name to resolve
     :returns: resolved steam id
     """
-    url = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/"
+    url = "https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/"
     params = {
         "key": Config.STEAM_API_KEY,
         "vanityurl": vanity_url,
@@ -94,7 +94,7 @@ def get_player_achievements(steam_id, app_id):
     :param app_id: steam application id
     :returns: player achievements api response
     """
-    url = "http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/"
+    url = "https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/"
     params = {
         "key": Config.STEAM_API_KEY,
         "steamid": steam_id,
@@ -158,7 +158,7 @@ def get_user_game_stats(steam_id, app_id):
     :param app_id: steam application id
     :returns: user game statistics api response
     """
-    url = " http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/"
+    url = "https://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/"
     params = {
         "key": Config.STEAM_API_KEY,
         "steamid": steam_id,
